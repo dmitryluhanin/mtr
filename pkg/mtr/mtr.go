@@ -1,11 +1,13 @@
 package mtr
 
 import (
+	"bufio"
 	"container/ring"
 	"fmt"
 	"math"
 	"math/rand"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -26,10 +28,11 @@ type MTR struct {
 	maxHops        int
 	maxUnknownHops int
 	ptrLookup      bool
+	fileOutput     string
 }
 
 func NewMTR(addr, srcAddr string, timeout time.Duration, interval time.Duration,
-	hopsleep time.Duration, maxHops, maxUnknownHops, ringBufferSize int, ptr bool) (*MTR, chan struct{}, error) {
+	hopsleep time.Duration, maxHops, maxUnknownHops, ringBufferSize int, ptr bool, fileOutput string) (*MTR, chan struct{}, error) {
 	if net.ParseIP(addr) == nil {
 		addrs, err := net.LookupHost(addr)
 		if err != nil || len(addrs) == 0 {
@@ -56,6 +59,7 @@ func NewMTR(addr, srcAddr string, timeout time.Duration, interval time.Duration,
 		ringBufferSize: ringBufferSize,
 		maxUnknownHops: maxUnknownHops,
 		ptrLookup:      ptr,
+		fileOutput:     fileOutput,
 	}, make(chan struct{}), nil
 }
 
@@ -129,8 +133,20 @@ func addTarget(currentTargets []string, toAdd string) []string {
 	return append(newTargets, toAdd)
 }
 
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
 // TODO: aggregates everything using the first target even when there are multiple
 func (m *MTR) Render(offset int) {
+	f, err := os.Create(m.fileOutput)
+	check(err)
+	defer f.Close()
+	gm.Output = bufio.NewWriter(f)
+	gm.Clear()
+
 	gm.MoveCursor(1, offset)
 	l := fmt.Sprintf("%d", m.ringBufferSize)
 	gm.Printf("HOP:    %-20s  %5s%%  %4s  %6s  %6s  %6s  %6s  %"+l+"s\n", "Address", "Loss", "Sent", "Last", "Avg", "Best", "Worst", "Packets")
@@ -140,6 +156,7 @@ func (m *MTR) Render(offset int) {
 		m.Statistic[i].Render(m.ptrLookup)
 		m.mutex.RUnlock()
 	}
+	gm.Flush()
 }
 
 func (m *MTR) Run(ch chan struct{}, count int) {

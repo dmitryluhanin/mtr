@@ -26,6 +26,7 @@ var (
 	jsonFmt          = false
 	srcAddr          = ""
 	versionFlag      bool
+	fileOutput       = "mtr.log"
 )
 
 // rootCmd represents the root command
@@ -38,7 +39,7 @@ var RootCmd = &cobra.Command{
 			return nil
 		}
 		m, ch, err := mtr.NewMTR(args[0], srcAddr, TIMEOUT, INTERVAL, HOP_SLEEP,
-			MAX_HOPS, MAX_UNKNOWN_HOPS, RING_BUFFER_SIZE, PTR_LOOKUP)
+			MAX_HOPS, MAX_UNKNOWN_HOPS, RING_BUFFER_SIZE, PTR_LOOKUP, fileOutput)
 		if err != nil {
 			return err
 		}
@@ -94,4 +95,5 @@ func init() {
 	RootCmd.Flags().BoolVarP(&PTR_LOOKUP, "ptr", "n", PTR_LOOKUP, "Reverse lookup on host")
 	RootCmd.Flags().BoolVar(&versionFlag, "version", false, "Print version")
 	RootCmd.Flags().StringVar(&srcAddr, "address", srcAddr, "The address to be bound the outgoing socket")
+	RootCmd.Flags().StringVar(&fileOutput, "file", fileOutput, "The file to be use as output file, by default mtr.log")
 }
