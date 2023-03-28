@@ -141,12 +141,13 @@ func check(err error) {
 
 // TODO: aggregates everything using the first target even when there are multiple
 func (m *MTR) Render(offset int) {
-	f, err := os.Create(m.fileOutput)
-	check(err)
-	defer f.Close()
-	gm.Output = bufio.NewWriter(f)
-	gm.Clear()
-
+	if len(m.fileOutput) > 0 {
+		f, err := os.Create(m.fileOutput)
+		check(err)
+		defer f.Close()
+		gm.Output = bufio.NewWriter(f)
+		gm.Clear()
+	}
 	gm.MoveCursor(1, offset)
 	l := fmt.Sprintf("%d", m.ringBufferSize)
 	gm.Printf("HOP:    %-20s  %5s%%  %4s  %6s  %6s  %6s  %6s  %"+l+"s\n", "Address", "Loss", "Sent", "Last", "Avg", "Best", "Worst", "Packets")
@@ -156,7 +157,9 @@ func (m *MTR) Render(offset int) {
 		m.Statistic[i].Render(m.ptrLookup)
 		m.mutex.RUnlock()
 	}
-	gm.Flush()
+	if len(m.fileOutput) > 0 {
+		gm.Flush()
+	}
 }
 
 func (m *MTR) Run(ch chan struct{}, count int) {

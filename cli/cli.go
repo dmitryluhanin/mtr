@@ -26,7 +26,7 @@ var (
 	jsonFmt          = false
 	srcAddr          = ""
 	versionFlag      bool
-	fileOutput       = "mtr.log"
+	fileOutput       = ""
 )
 
 // rootCmd represents the root command
